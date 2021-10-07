@@ -5,8 +5,12 @@ $user_table = Get-WmiObject win32_UserAccount | Select-Object Name, FullName, Ca
 $users = Get-WmiObject win32_UserAccount | Select-Object Name
 $cyber_patriot_users = @()
 $found = $()
+#$fileHash = Get-FileHash -Algorithm alg file
 
 $names = @($users.Name)
+
+#Default Users that you don't want to touch
+$blacklisted_users = @("Administrator", "DefaultAccount", "WDAGUtilityAccount", "Guest") 
 
 try {
     if ($args[0] -Like "*.txt") {
@@ -26,6 +30,10 @@ foreach ($name in $names) {
         Write-Host $name "exists"
         $found += $name
     }
+    elseif ($blacklisted_users.Contains($name)) {
+        Write-Host $name "is a blacklisted user don't touch"
+        
+    }
     else {
         Write-Host $name "shouldnt exist"
     }
@@ -38,3 +46,6 @@ foreach ($user in $cyber_patriot_users) {
         Write-Host "could not find" $user
     }
 }
+
+$media_files = Get-ChildItem -Path C:\Users\ -Include *.txt -File -Recurse -ErrorAction SilentlyContinue
+$media_files
