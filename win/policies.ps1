@@ -33,8 +33,9 @@ Function Set-SecPol($Object, $CfgFile){
  
  
  $SecPool = Parse-SecPol -CfgFile C:\Users\nicol\Documents\GitHub\CyberPatriot\Windows\win\secpols.cfg
- #$SecPool.'System Access'.PasswordComplexity = 1
+ $SecPool.'System Access'.PasswordComplexity = 1
  $SecPool.'System Access'.MinimumPasswordLength = 8
- #$SecPool.'System Access'.MaximumPasswordAge = 60
+ $SecPool.'System Access'.MinimumPasswordAge = 10
+ $SecPool.'System Access'.MaximumPasswordAge = 30
  
  Set-SecPol -Object $SecPool -CfgFile C:\Users\nicol\Documents\GitHub\CyberPatriot\Windows\win\secpols.cfg
