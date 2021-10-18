@@ -1,0 +1,100 @@
+#!/bin/bash
+
+# Check that the executor has the correct
+# permissions to be running this script.
+if [[ $EUID -ne 0 ]]; then
+	printf "\033[1;35mthis command must be run as root!\033[0m\n"
+	exit 1
+fi
+
+# Users
+USERS=($(cut -d: -f1,3,6 /etc/passwd))
+FOUND=()
+UNKNOWN=()
+
+# Supplied users as arguments.
+USER_ARGS=($(echo "$@" | tr -s " " "\n"))
+
+# User data
+UID_MIN_DATA=($(grep -E '^UID_MIN' /etc/login.defs |  tr -s " " "\012"))
+UID_MIN=${UID_MIN_DATA[1]}
+
+OUT_DIR="./saved"
+
+mkdir -p "$OUT_DIR"
+
+# Save the home directory data of the user
+# supplied as an argument.
+save_user_data() {
+	local home_dir=$(getent passwd "$1" | cut -d: -f6)
+	cp -r "$home_dir/" "$OUT_DIR"/"$1" 2>/dev/null
+}
+
+# Sort a user to the appropriate array.
+sort_user() {
+	local user=($(echo $1 | tr ":" "\n"))
+	local user_id="${user[1]}"
+	if [[ "$user_id" -ge $UID_MIN ]]; then
+		name="${user[0]}"
+		if [[ "${USER_ARGS[@]}" =~ "$name" ]]; then
+			FOUND+=("$name")
+		else
+			UNKNOWN+=("$name")
+		fi
+	fi
+}
+
+
+prompt_unknown() {
+	printf "\033[1;35mdid not recognize\033[0m $1. \033[1;35mwould you like to delete? (y/ys (yes and save)/n, default n)\033[0m\t"
+	read opt
+	# Read the choice, of the choice does not exist,
+	case $opt in
+		[YSysySYs]* ) save_user_data "$1" && userdel "$1";;
+		[Yy]* ) userdel "$1"
+	esac
+}
+
+prompt_nonexistent() {
+	printf "\033[1;33mdid not find\033[0m\t$1\n\033[1;37mwould you like to add them? (y/n, default n)\033[0m\t"
+	read opt
+	case $opt in
+		[Yy]* ) useradd -m "$1" && printf "\033[1;32madded \033[9m$1\033[1;32mwith home /home/$1\033[0m.\n"
+	esac
+}
+
+prompt_group_mg() {
+	local udata=($(getent passwd "$1" | cut -d: -f1,3 | tr ":" "\n"))
+	local user_groups=($(groups "${udata[0]}" | tr ":" "\n" | tr -s " " "\n" ))
+	local trimmed_groups=("${user_groups[@]:1}")
+	if [[ "${udata[1]}" -ge $UID_MIN ]]; then
+		printf "groups for \033[1;35m${udata[0]}\033[0m:\t"
+		if [[ "${#trimmed_groups[@]}" -gt 1 ]]; then
+			for group in "${trimmed_groups[@]:1}"; do printf "$group\t"; done
+			printf "\nwhat groups would you like to remove?\t"
+			read gz
+			if [[ -n $gz ]]; then
+				gpasswd --delete "${udata[0]}" $gz
+			fi
+		fi
+		echo
+	fi
+}
+
+# Sort all the users in the appropriate arrays.
+for user in "${USERS[@]}"; do
+	sort_user "$user"
+done
+
+for user in "${UNKNOWN[@]}"; do
+	prompt_unknown "$user"
+done
+
+for user in "${USER_ARGS[@]}"; do
+	if [[ ! "${FOUND[@]}" =~ (^|[[:space:]])"$user"($|[[:space:]]) ]]; then
+		prompt_nonexistent "$user"
+	else
+		printf "\033[1;32mfound\033[0m\t$user\n"
+		prompt_group_mg "$user"
+	fi
+done
