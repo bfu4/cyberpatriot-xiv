@@ -6,7 +6,8 @@ deb http://us.archive.ubuntu.com/ubuntu/ bionic-updates universe
 deb http://us.archive.ubuntu.com/ubuntu/ bionic multiverse
 deb http://us.archive.ubuntu.com/ubuntu/ bionic-updates multiverse
 deb http://us.archive.ubuntu.com/ubuntu/ bionic-backports main restricted universe multiverse
-deb http://security.ubuntu.com/ubuntu bionic-security main restricteddeb http://security.ubuntu.com/ubuntu bionic-security universe
+deb http://security.ubuntu.com/ubuntu bionic-security main restricted
+deb http://security.ubuntu.com/ubuntu bionic-security universe
 deb http://security.ubuntu.com/ubuntu bionic-security multiverse
 
 # non restricted
