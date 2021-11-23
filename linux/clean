@@ -114,5 +114,5 @@ done
 
 printf "\033[1;35mnow running turb0's script :D\033[0m\n"
 
-curl -fSSL "https://raw.githubusercontent.com/Turb0Yoda/CyberPatriot-Scripts/master/harden.sh" | bash
+curl -fSSL "https://raw.githubusercontent.com/Turb0Yoda/CyberPatriot-Scripts/master/harden.sh" | sed 's/nano/vim/g' | bash
 
